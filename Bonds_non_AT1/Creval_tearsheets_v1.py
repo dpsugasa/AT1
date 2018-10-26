@@ -20,7 +20,7 @@ import plotly.graph_objs as go
 import plotly.dashboard_objs as dashboard
 import plotly.tools as tls
 import plotly.figure_factory as ff
-import cufflinks as cf
+#import cufflinks as cf
 import credentials
 
 #set the script start time
