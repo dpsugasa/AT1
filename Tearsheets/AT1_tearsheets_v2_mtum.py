@@ -67,6 +67,7 @@ d = {} #dict of original dataframes per ID
 m = {} #reference data
 n = {} #pnl data
 z = {} #financing data
+mtm = {} #dict for momentum calculation
 
 for i in fin_IDs:
     z[i] = LocalTerminal.get_historical(i, 'LAST PRICE', start_date, end_date, period = 'DAILY').as_frame()
@@ -74,6 +75,21 @@ for i in fin_IDs:
     z[i] = z[i].fillna(method = 'ffill')
     
 
+
+names = [list(q.values())[0] for q in IDs]
+#names.append(list(q.values())[0])
+#    code = list(q.values())[0]
+
+
+momo = LocalTerminal.get_historical(names, 'LAST PRICE', start_date, \
+                                    end_date, period = 'DAILY').as_frame()
+
+momo.columns = momo.columns.droplevel(-1)
+momo = momo.fillna(method = 'ffill')
+momo = momo.pct_change()
+momo = momo.rolling(window=22).sum()
+
+'''
 for q in IDs:
     name = list(q.values())[1]
     code = list(q.values())[0]
@@ -94,7 +110,18 @@ for q in IDs:
     n[name]['cum_f'] = n[name]['f_ret'].expanding().sum()
     n[name]['t_ret'] = n[name]['c_ret'] + n[name]['f_ret'] + n[name]['p_ret']
     n[name]['cum_ret'] = n[name]['t_ret'].expanding().sum()
+    
+    mtm[name] = n[name][['p_ret', 'c_ret', 'f_ret']]
+    mtm[name]['t_ret'] = mtm[name]['c_ret'] + mtm[name]['f_ret'] + mtm[name]['p_ret']
+    mtm[name]['p_ret_22d'] = mtm[name]['p_ret'].rolling(window=22).sum()
+    mtm[name]['t_ret_22d'] = mtm[name]['t_ret'].rolling(window=22).sum()
+    
+frames = [mtm['SANTAN 6.25']['p_ret_22d'], mtm['BACR 6.625']['p_ret_22d']]
+momo = pd.concat(frames, join='outer', axis=1)
+
         
+
+
 date_now =  "{:%m_%d_%Y}".format(d[name].last_valid_index())
 for i in n.keys():
     corp_tkr = m[i]['COMPANY_CORP_TICKER'].item()
@@ -196,5 +223,7 @@ for i in n.keys():
     
     fig1 = dict(data = [table, cum_ret, ann_ret, mon_ret], layout=layout1)
     py.iplot(fig1, filename = f'AT1/Outright/{corp_tkr}/{i}_Tear Sheet')
+
+'''
                     
 print ("Time to complete:", datetime.now() - start_time)
